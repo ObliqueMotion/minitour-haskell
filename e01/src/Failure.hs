@@ -1,5 +1,5 @@
 module Failure
-    ( Failure
+    ( Failure(..)
     ) where
 
 import Position
