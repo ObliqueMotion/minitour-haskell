@@ -1,2 +1,3 @@
 # minitour-haskell
-To Be Added Later
+A port of the minitour from Java to Haskell.   
+https://github.com/zipwith/minitour
