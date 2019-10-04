@@ -1,10 +1,10 @@
 module Main where
 
+import Lib
 import System.Environment
 import Data.List
-import Lib
-import Position
+import Diagnostic 
 
 
 main :: IO ()
-main = do putStrLn $ show $ coordString Position { col = 5, row = 2 }
+main = do putStrLn $ show $ rowOf $ positionOf Failure { text = "Hello", position = Position { col = 5, row = 2 } }
