@@ -17,7 +17,6 @@ data Diagnostic = Failure { text :: String
                 | Warning { text :: String
                           , position :: Position
                           } 
-                deriving Show
 
 textOf :: Diagnostic -> String
 textOf Failure { text = text } = text
@@ -30,3 +29,11 @@ positionOf Warning { position = position } = position
 crossRef :: Diagnostic -> String
 crossRef Failure {} = "Failure: unimplemented"
 crossRef Warning {} = "Warning: unimplemented"
+
+instance Show Diagnostic where
+    show Failure { text = text
+               , position = position
+               } = "FAILURE " ++ coordString position ++ ": " ++ text
+    show Warning { text = text
+               , position = position
+               } = "WARNING " ++ coordString position ++ ": " ++ text
