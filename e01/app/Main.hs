@@ -6,6 +6,7 @@ import Data.List
 import Diagnostic 
 import Handler
 
-
 main :: IO ()
-main = do putStrLn $ show $ Failure { text = "Hello", position = Position { row = 5, col = 2 } }
+main = do 
+  args <- getArgs
+  compiler args

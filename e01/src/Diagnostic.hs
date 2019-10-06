@@ -2,29 +2,38 @@ module Diagnostic
     ( Diagnostic(..)
     , Position(..)
     , textOf
-    , positionOf
+    , posOf
     , crossRef
     , rowOf
     , colOf
     , coordString
+    , failure
+    , warning
+    , position
     ) where
 
 import Position
 
 data Diagnostic = Failure { text :: String
-                          , position :: Position
+                          , pos :: Position
                           }
                 | Warning { text :: String
-                          , position :: Position
+                          , pos :: Position
                           } 
+
+failure :: String -> Position -> Diagnostic
+failure text pos = Failure { text = text, pos = pos }
+
+warning :: String -> Position -> Diagnostic
+warning text pos = Warning { text = text, pos = pos }
 
 textOf :: Diagnostic -> String
 textOf Failure { text = text } = text
 textOf Warning { text = text } = text
 
-positionOf :: Diagnostic -> Position
-positionOf Failure { position = position } = position
-positionOf Warning { position = position } = position
+posOf :: Diagnostic -> Position
+posOf Failure { pos = pos } = pos
+posOf Warning { pos = pos } = pos
 
 crossRef :: Diagnostic -> String
 crossRef Failure {} = "Failure: unimplemented"
@@ -32,8 +41,8 @@ crossRef Warning {} = "Warning: unimplemented"
 
 instance Show Diagnostic where
     show Failure { text = text
-               , position = position
-               } = "FAILURE " ++ coordString position ++ ": " ++ text
+               , pos = pos
+               } = "\nFAILURE " ++ coordString pos ++ ": " ++ text ++ "\n"
     show Warning { text = text
-               , position = position
-               } = "WARNING " ++ coordString position ++ ": " ++ text
+               , pos = pos
+               } = "\nWARNING " ++ coordString pos ++ ": " ++ text ++ "\n"
