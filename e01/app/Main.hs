@@ -1,10 +1,12 @@
 module Main where
 
+import Lib
 import System.Environment
 import Data.List
-import Lib
-import Position
-
+import Diagnostic 
+import Handler
 
 main :: IO ()
-main = do putStrLn $ show $ coordString Position { col = 5, row = 2 }
+main = do 
+  args <- getArgs
+  compiler args
