@@ -14,12 +14,12 @@ displayDiagnostics :: Handler -> IO ()
 displayDiagnostics = putStrLn . show
 
 charAsString :: Char -> String
-charAsString '\b' = "\\\\b"
-charAsString '\t' = "\\\\b"
-charAsString '\n' = "\\\\b"
-charAsString '\f' = "\\\\b"
-charAsString '\r' = "\\\\b"
-charAsString ' '  = "'  '"
+charAsString '\b' = "\\b"
+charAsString '\t' = "\\t"
+charAsString '\n' = "\\n"
+charAsString '\f' = "\\f"
+charAsString '\r' = "\\r"
+charAsString ' '  = "' '"
 charAsString c    = [c]
 
 printChars :: String -> String
