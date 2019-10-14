@@ -1,8 +1,21 @@
 module Token
     ( Token(..)
+    , isDiagnostic
+    , toDiagnostic
     ) where
 
 import Diagnostic
+
+isDiagnostic :: Token -> Bool
+isDiagnostic t = case t of
+                 Error _ -> True
+                 _ -> False
+
+toDiagnostic :: Token -> Diagnostic
+toDiagnostic t = case t of
+                 Error d -> d
+                 _ -> error "You done messed up."
+
 
 data Token = EndInput
            | Error Diagnostic

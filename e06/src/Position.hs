@@ -4,7 +4,6 @@ module Position
     , colOf
     , incRow
     , incCol
-    , zeroCol
     , coordString
     , position
     ) where
@@ -23,19 +22,14 @@ colOf :: Position -> Int
 colOf Position { col = col } = col
 
 incRow :: Int -> Position -> Position
-incRow n Position { col = col
-                  , row = row
-                  } = position col (row+n)
+incRow n Position { row = row } = position 1 (row+n)
 
 incCol :: Int -> Position -> Position
 incCol n Position { col = col 
                   , row = row
                   } = position (col+n) row
 
-zeroCol :: Position -> Position
-zeroCol Position { row = row } = position 0 row
-
 coordString :: Position -> String
 coordString Position { col = col
                      , row = row
-                     } = "(" ++ show col ++ ", " ++ show row ++ ")"
+                     } = "(" ++ show row ++ ", " ++ show col ++ ")"

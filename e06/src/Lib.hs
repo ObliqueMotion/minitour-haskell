@@ -4,6 +4,7 @@ module Lib
 
 import Lexer
 import Handler
+import Token
 import Diagnostic
 import Position
 import Data.Char (ord)
@@ -29,6 +30,10 @@ compiler [fileName] = do
     fileExists <- doesFileExist path
     if fileExists then do
         input <- readFile path
-        mapM_ (putStrLn . show) (lexer input)
+        putStrLn input
+        let tokens = lexer input
+        let diagnostics = map toDiagnostic $ filter isDiagnostic tokens
+        if null diagnostics then mapM_ (putStrLn . show) (lexer input)
+                            else putStrLn $ show $ foldl report handler diagnostics
     else
         putStrLn $ show $ report handler (failure ("File (" ++ path ++ ") does not exist.") (position 0 0))
