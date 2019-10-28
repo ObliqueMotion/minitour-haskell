@@ -9,6 +9,7 @@ import Diagnostic
 import Position
 import Data.Char (ord)
 import System.Directory (doesFileExist)
+import Data.Either (partitionEithers)
 
 handler :: Handler
 handler = Handler { failures = 0, warnings = 0, diagnostics = []}
@@ -31,9 +32,8 @@ compiler [fileName] = do
     if fileExists then do
         input <- readFile path
         putStrLn input
-        let tokens = lexer input
-        let diagnostics = map toDiagnostic $ filter isDiagnostic tokens
-        if null diagnostics then mapM_ (putStrLn . show) (lexer input)
-                            else putStrLn $ show $ foldl report handler diagnostics
+        let (tokens, diagnostics) = partitionEithers $ lexer input
+        if null diagnostics then mapM_ print tokens
+                            else print $ foldl report handler diagnostics
     else
         putStrLn $ show $ report handler (failure ("File (" ++ path ++ ") does not exist.") (position 0 0))
