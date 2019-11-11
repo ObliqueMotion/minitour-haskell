@@ -2,7 +2,7 @@
 int i, t;
 i = 0;
 t = 0;
-while (i<10) {
+wh%le (i<10) {
   i = i + 1;
   t = t + i;
 }

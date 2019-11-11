@@ -5,101 +5,37 @@ module Lexer
 import Token
 import Data.Char
 import Data.Map.Strict as DMS
+import Combinator
 import Control.Applicative
 import Diagnostic
 import Position
 import Data.Either
 
-newtype Parser a = P (String -> [(a, String)])
-
-parse :: Parser a -> (String -> [(a, String)])
-parse (P p) inp = p inp
-
-instance Functor Parser where
-        -- fmap :: (a -> b) -> Parser a -> Parser b
-        fmap f parser = do x <- parser
-                           return (f x)
-
-instance Applicative Parser where
-        -- pure :: a -> Parser a
-        pure x = P (\inp -> [(x, inp)])
-
-        -- <*> :: Parser (a -> b) -> Parser a -> Parser b
-        pf <*> px = do f <- pf
-                       x <- px
-                       return (f x)
-
-instance Monad Parser where
-        -- (>>=) :: Parser a -> (a -> Parser b) -> Parser b
-        px >>= f = P (\inp -> case parse px inp of
-                                   []         -> []
-                                   [(x, out)] -> parse (f x) out)
-
-
-instance Alternative Parser where
-     -- empty :: Parser a
-     empty = P (\_ -> [])
-
-     -- (<|>) :: Parser a -> Parser a -> Parser a
-     px <|> py = P (\inp -> case parse px inp of 
-                                 []  -> parse py inp
-                                 [(y, out)] -> [(y, out)])
-                                    
-
-item :: Parser Char
-item = P (\inp -> case inp of
-                     []     -> []
-                     (x:xs) -> [(x,xs)])
-                                   
-sat :: (Char -> Bool) -> Parser Char
-sat p = do x <- item
-           if p x then return x else Control.Applicative.empty
-
-char :: Char -> Parser Char
-char = sat . (==)
-                                   
-digit :: Parser Char
-digit = sat isDigit
-
-int :: Parser Int
-int = do xs <- some digit
-         return (read xs)
-                                   
-string :: String -> Parser String
-string []     = return []
-string (x:xs) = do char x
-                   string xs
-                   return (x:xs)
-                                   
-skipOne :: Parser ()
-skipOne = do item
-             return ()
-
-skipSpace :: Parser ()
-skipSpace = do many (sat isSpace)
-               return ()
-
-skipUntilNext :: String -> Parser ()
-skipUntilNext s = do string s
-                     return ()
-              <|> do skipOne
-                     skipUntilNext s
-
-intLit :: Parser Token
-intLit = do x <- int
-            return (IntLit x)
-
-ident :: Parser Token
-ident = do x  <- sat isJavaIdentifierStart
-           xs <- many (sat isJavaIdentifierPart)
-           return (case DMS.lookup (x:xs) reserved of
-                        Just token -> token
-                        Nothing    -> (Identifier (x:xs)))
-
-invalidCharacter :: Char -> Position -> Diagnostic
-invalidCharacter c p = failure ("Invalid character (" ++ [c] ++ ")") p
-
-reserved = DMS.fromList [ ("if",      If)
+reserved = DMS.fromList [ ("==",      Eq)
+                        , ("!=",      NotEq)
+                        , ("<=",      LessOrEq)
+                        , (">=",      GreaterOrEq)
+                        , ("&&",      LogicalAnd)
+                        , ("||",      LogicalOr)
+                        , ("(" ,      OpenParen)
+                        , (")" ,      CloseParen)
+                        , ("{" ,      OpenBrace)
+                        , ("}" ,      CloseBrace)
+                        , (";" ,      Semicolon)
+                        , ("," ,      Comma)
+                        , ("=" ,      Assignment)
+                        , ("!" ,      Not)
+                        , ("<" ,      LessThan)
+                        , (">" ,      GreaterThan)
+                        , ("&" ,      BitAnd)
+                        , ("|" ,      BitOr)
+                        , ("^" ,      BitXor)
+                        , ("~" ,      Tilde)
+                        , ("+" ,      Add)
+                        , ("-" ,      Sub)
+                        , ("*" ,      Mul)
+                        , ("/" ,      Div)
+                        , ("if",      If)
                         , ("int",     Int')
                         , ("else",    Else)
                         , ("true",    True')
@@ -108,59 +44,6 @@ reserved = DMS.fromList [ ("if",      If)
                         , ("while",   While)
                         , ("boolean", Boolean)
                         ]
-                         
-lex :: String -> ([Token], [Diagnostic])
-lex = partitionEithers . fst . head . parse lexer 
-
-lexer :: Parser [Either Token Diagnostic]
-lexer = many (do skipSpace 
-                 nextToken)
-
-
-skipComments :: Parser ()
-skipComments = do string "//"
-                  skipUntilNext "\n"
-              <|> do string "/*"
-                     skipUntilNext "*/"
-
-symbol :: String -> Token -> Parser Token
-symbol s t = do string s
-                return t
-
-nextToken :: Parser (Either Token Diagnostic)
-nextToken = do  skipComments
-                nextToken
-            <|> Left <$> ident
-            <|> Left <$> intLit
-            <|> Left <$> symbol "==" Eq
-            <|> Left <$> symbol "!=" NotEq
-            <|> Left <$> symbol "<=" LessOrEq
-            <|> Left <$> symbol ">=" GreaterOrEq
-            <|> Left <$> symbol "&&" LogicalAnd
-            <|> Left <$> symbol "||" LogicalOr
-            <|> Left <$> symbol "("  OpenParen
-            <|> Left <$> symbol ")"  CloseParen
-            <|> Left <$> symbol "{"  OpenBrace
-            <|> Left <$> symbol "}"  CloseBrace
-            <|> Left <$> symbol ";"  Semicolon
-            <|> Left <$> symbol ","  Comma
-            <|> Left <$> symbol "="  Assignment
-            <|> Left <$> symbol "!"  Not
-            <|> Left <$> symbol "<"  LessThan
-            <|> Left <$> symbol ">"  GreaterThan
-            <|> Left <$> symbol "&"  BitAnd
-            <|> Left <$> symbol "|"  BitOr
-            <|> Left <$> symbol "^"  BitXor
-            <|> Left <$> symbol "~"  Tilde
-            <|> Left <$> symbol "+"  Add
-            <|> Left <$> symbol "-"  Sub
-            <|> Left <$> symbol "*"  Mul
-            <|> Left <$> symbol "/"  Div
-        
-skipOneLineComment :: String -> String
-skipOneLineComment [] = []
-skipOneLineComment ('\n':cs) = cs
-skipOneLineComment (c:cs) = skipOneLineComment cs
 
 isJavaIdentifierStart :: Char -> Bool
 isJavaIdentifierStart c
@@ -175,8 +58,115 @@ isJavaIdentifierPart c
         | c == '$'     = True
         | otherwise    = False
 
-number :: String -> (String, String)
-number = span isDigit
+invalidCharacter :: Char -> Position -> Diagnostic
+invalidCharacter c p = failure ("Invalid character (" ++ [c] ++ ")") p
 
-identifier :: String -> (String, String)
-identifier = span isJavaIdentifierPart
+type Lexer   = Combinator (String, Position)
+type PInt    = (Int,    Position)
+type PChar   = (Char,   Position)
+type PString = (String, Position)
+
+item :: Lexer PChar
+item = C (\inp -> case inp of
+                  ([], _)     -> []
+                  ((x:xs), p) -> [((x, p),(xs, p +> x))])
+                                   
+satisfy :: (Char -> Bool) -> Lexer PChar
+satisfy f = do (x, p) <- item
+               if f x then return (x, p)
+                      else Control.Applicative.empty
+
+char :: Char -> Lexer PChar
+char = satisfy . (==)
+                                   
+digit :: Lexer PChar
+digit = satisfy isDigit
+
+int :: Lexer PInt
+int = do xps <- some digit
+         let p  = snd $ head xps
+         let xs = fst <$> xps
+         return (read xs, p)
+                                   
+string :: String -> Lexer PString
+string []     = return ([], start)
+string (x:xs) = do (_,p) <- char x
+                   string xs
+                   return ((x:xs), p)
+                                   
+skipOne :: Lexer ()
+skipOne = do item
+             return ()
+
+skipSpace :: Lexer ()
+skipSpace = do many (satisfy isSpace)
+               return ()
+
+skipUntilNext :: String -> Lexer ()
+skipUntilNext s = do string s
+                     return ()
+              <|> do skipOne
+                     skipUntilNext s
+
+intLit :: Lexer Token
+intLit = do (x,p) <- int
+            return (IntLit x p)
+
+ident :: Lexer Token
+ident = do (x,p) <- satisfy isJavaIdentifierStart
+           xps   <- many (satisfy isJavaIdentifierPart)
+           let xs = fst <$> xps
+           return (case DMS.lookup (x:xs) reserved of
+                        Just token -> token p
+                        Nothing    -> (Identifier (x:xs) p))
+
+lex :: String -> ([Token], [Diagnostic])
+lex input = partitionEithers $ fst $ head $ combine tokens (input, start)
+
+tokens :: Lexer [Either Token Diagnostic]
+tokens = many (do skipSpace 
+                  token)
+
+skipComments :: Lexer ()
+skipComments = do string "//"
+                  skipUntilNext "\n"
+              <|> do string "/*"
+                     skipUntilNext "*/"
+
+--symbol :: String -> Lexer Token
+symbol s = do (_,p) <- string s
+              case DMS.lookup s reserved of
+                              Just t  -> return (t p)
+                              Nothing -> Control.Applicative.empty
+
+token :: Lexer (Either Token Diagnostic)
+token = do  skipComments
+            token
+        <|> Left <$> ident
+        <|> Left <$> intLit
+        <|> Left <$> symbol "=="
+        <|> Left <$> symbol "!="
+        <|> Left <$> symbol "<="
+        <|> Left <$> symbol ">="
+        <|> Left <$> symbol "&&"
+        <|> Left <$> symbol "||"
+        <|> Left <$> symbol "(" 
+        <|> Left <$> symbol ")" 
+        <|> Left <$> symbol "{" 
+        <|> Left <$> symbol "}" 
+        <|> Left <$> symbol ";" 
+        <|> Left <$> symbol "," 
+        <|> Left <$> symbol "=" 
+        <|> Left <$> symbol "!" 
+        <|> Left <$> symbol "<" 
+        <|> Left <$> symbol ">" 
+        <|> Left <$> symbol "&" 
+        <|> Left <$> symbol "|" 
+        <|> Left <$> symbol "^" 
+        <|> Left <$> symbol "~"
+        <|> Left <$> symbol "+" 
+        <|> Left <$> symbol "-" 
+        <|> Left <$> symbol "*" 
+        <|> Left <$> symbol "/" 
+        <|> do (c,p) <- item
+               return (Right $ invalidCharacter c p)
