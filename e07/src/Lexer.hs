@@ -69,7 +69,7 @@ type PString = (String, Position)
 item :: Lexer PChar
 item = C (\inp -> case inp of
                   ([], _)     -> []
-                  ((x:xs), p) -> [((x,p), (xs,p +> x))])
+                  ((x:xs),p) -> [((x,p), (xs,p +> x))])
                                    
 satisfy :: (Char -> Bool) -> Lexer PChar
 satisfy f = do (x, p) <- item
@@ -121,8 +121,6 @@ ident = do (x,p) <- satisfy isJavaIdentifierStart
            return (case DMS.lookup (x:xs) reserved of
                         Just token -> token p
                         Nothing    -> (Identifier (x:xs) p))
-
-
 
 symbol :: String -> Lexer Token
 symbol s = do (_,p) <- string s
