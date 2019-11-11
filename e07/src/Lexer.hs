@@ -3,13 +3,13 @@ module Lexer
     ) where
 
 import Token
-import Data.Char
-import Data.Map.Strict as DMS
-import Combinator
-import Control.Applicative
-import Diagnostic
 import Position
-import Data.Either
+import Data.Char
+import Combinator
+import Diagnostic
+import Control.Applicative
+import Data.Either (partitionEithers)
+import Data.Map.Strict as DMS
 
 reserved = DMS.fromList [ ("==",      Eq)
                         , ("!=",      NotEq)
@@ -69,7 +69,7 @@ type PString = (String, Position)
 item :: Lexer PChar
 item = C (\inp -> case inp of
                   ([], _)     -> []
-                  ((x:xs), p) -> [((x, p),(xs, p +> x))])
+                  ((x:xs), p) -> [((x,p), (xs,p +> x))])
                                    
 satisfy :: (Char -> Bool) -> Lexer PChar
 satisfy f = do (x, p) <- item
@@ -94,19 +94,21 @@ string (x:xs) = do (_,p) <- char x
                    string xs
                    return ((x:xs), p)
                                    
-skipOne :: Lexer ()
-skipOne = do item
-             return ()
-
 skipSpace :: Lexer ()
 skipSpace = do many (satisfy isSpace)
                return ()
 
 skipUntilNext :: String -> Lexer ()
-skipUntilNext s = do string s
-                     return ()
-              <|> do skipOne
-                     skipUntilNext s
+skipUntilNext s =  do string s
+                      return ()
+               <|> do item
+                      skipUntilNext s
+
+skipComments :: Lexer ()
+skipComments =  do string "//"
+                   skipUntilNext "\n"
+            <|> do string "/*"
+                   skipUntilNext "*/"
 
 intLit :: Lexer Token
 intLit = do (x,p) <- int
@@ -120,17 +122,13 @@ ident = do (x,p) <- satisfy isJavaIdentifierStart
                         Just token -> token p
                         Nothing    -> (Identifier (x:xs) p))
 
-skipComments :: Lexer ()
-skipComments = do string "//"
-                  skipUntilNext "\n"
-              <|> do string "/*"
-                     skipUntilNext "*/"
+
 
 symbol :: String -> Lexer Token
 symbol s = do (_,p) <- string s
               case DMS.lookup s reserved of
-                              Just t  -> return (t p)
-                              Nothing -> Control.Applicative.empty
+                        Just t  -> return (t p)
+                        Nothing -> Control.Applicative.empty
 
 token :: Lexer (Either Token Diagnostic)
 token  = do skipComments
@@ -162,8 +160,8 @@ token  = do skipComments
         <|> Left <$> symbol "-" 
         <|> Left <$> symbol "*" 
         <|> Left <$> symbol "/" 
-        <|> do (c,p) <- item
-               Right <$> return (invalidCharacter c p)
+        <|> do (x,p) <- item
+               Right <$> return (invalidCharacter x p)
 
 tokenize :: Lexer [Either Token Diagnostic]
 tokenize = many (do skipSpace 
