@@ -120,13 +120,6 @@ ident = do (x,p) <- satisfy isJavaIdentifierStart
                         Just token -> token p
                         Nothing    -> (Identifier (x:xs) p))
 
-lex :: String -> ([Token], [Diagnostic])
-lex input = partitionEithers $ fst $ head $ combine tokens (input, start)
-
-tokens :: Lexer [Either Token Diagnostic]
-tokens = many (do skipSpace 
-                  token)
-
 skipComments :: Lexer ()
 skipComments = do string "//"
                   skipUntilNext "\n"
@@ -171,3 +164,10 @@ token  = do skipComments
         <|> Left <$> symbol "/" 
         <|> do (c,p) <- item
                Right <$> return (invalidCharacter c p)
+
+tokenize :: Lexer [Either Token Diagnostic]
+tokenize = many (do skipSpace 
+                    token)
+
+lex :: String -> ([Token], [Diagnostic])
+lex input = partitionEithers $ fst $ head $ apply tokenize (input, start)

@@ -22,9 +22,9 @@ instance Applicative (Combinator input) where
 
 instance Monad (Combinator input) where
         -- (>>=) :: Combinator a -> (a -> Combinator b) -> Combinator b
-        cx >>= f = C (\inp -> case combine cx inp of
+        cx >>= f = C (\inp -> case apply cx inp of
                                    []         -> []
-                                   [(x, out)] -> combine (f x) out)
+                                   [(x, out)] -> apply (f x) out)
 
 
 instance Alternative (Combinator input) where
@@ -32,10 +32,10 @@ instance Alternative (Combinator input) where
      empty = C (\_ -> [])
 
      -- (<|>) :: Combinator a -> Combinator a -> Combinator a
-     px <|> py = C (\inp -> case combine px inp of 
-                                 []  -> combine py inp
+     cx <|> cy = C (\inp -> case apply cx inp of 
+                                 []  -> apply cy inp
                                  [(y, out)] -> [(y, out)])
                                     
-combine :: Combinator input output -> (input -> [(output, input)])
-combine (C c) inp = c inp
+apply :: Combinator input output -> (input -> [(output, input)])
+apply (C c) = c
 
