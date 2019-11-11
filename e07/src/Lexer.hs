@@ -133,14 +133,15 @@ skipComments = do string "//"
               <|> do string "/*"
                      skipUntilNext "*/"
 
---symbol :: String -> Lexer Token
+symbol :: String -> Lexer Token
 symbol s = do (_,p) <- string s
               case DMS.lookup s reserved of
                               Just t  -> return (t p)
                               Nothing -> Control.Applicative.empty
 
 token :: Lexer (Either Token Diagnostic)
-token = do  skipComments
+token  = do skipComments
+            skipSpace
             token
         <|> Left <$> ident
         <|> Left <$> intLit
@@ -169,4 +170,4 @@ token = do  skipComments
         <|> Left <$> symbol "*" 
         <|> Left <$> symbol "/" 
         <|> do (c,p) <- item
-               return (Right $ invalidCharacter c p)
+               Right <$> return (invalidCharacter c p)
