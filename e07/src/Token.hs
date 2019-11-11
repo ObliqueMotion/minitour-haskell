@@ -4,39 +4,39 @@ module Token
 
 import Diagnostic
 
-data Token = EndInput
-           | Identifier String
-           | IntLit Int
-           | Eq
-           | NotEq
-           | LessOrEq
-           | GreaterOrEq
-           | LogicalAnd
-           | LogicalOr
-           | If
-           | Else
-           | While
-           | Print
-           | Int'
-           | Boolean
-           | True'
-           | False'
-           | OpenParen
-           | CloseParen
-           | OpenBrace
-           | CloseBrace
-           | Semicolon
-           | Comma
-           | Assignment
-           | Not
-           | LessThan
-           | GreaterThan
-           | BitAnd
-           | BitOr
-           | BitXor
-           | Tilde
-           | Add
-           | Sub
-           | Mul
-           | Div
+data Token = EndInput Position
+           | Identifier String Position
+           | IntLit Int Position
+           | Eq Position
+           | NotEq Position
+           | LessOrEq Position
+           | GreaterOrEq Position
+           | LogicalAnd Position
+           | LogicalOr Position
+           | If Position
+           | Else Position
+           | While Position
+           | Print Position
+           | Int' Position
+           | Boolean Position
+           | True' Position
+           | False' Position
+           | OpenParen Position
+           | CloseParen Position
+           | OpenBrace Position
+           | CloseBrace Position
+           | Semicolon Position
+           | Comma Position
+           | Assignment Position
+           | Not Position
+           | LessThan Position
+           | GreaterThan Position
+           | BitAnd Position
+           | BitOr Position
+           | BitXor Position
+           | Tilde Position
+           | Add Position
+           | Sub Position
+           | Mul Position
+           | Div Position
            deriving (Show, Eq)
