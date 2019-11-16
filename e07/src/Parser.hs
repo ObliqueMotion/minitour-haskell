@@ -33,7 +33,7 @@ add' e = do t  <- token
                 Token.Add _ -> add' (AST.Add e e')
                 Token.Sub _ -> add' (AST.Sub e e')
                 otherwise   -> Combinator.fail
-      <|> return e
+        <|> return e
 
 mul :: Parser Expr
 mul  = do e <- unary
@@ -47,7 +47,7 @@ mul' e = do t  <- token
                 Token.Mul _ -> mul' (AST.Mul e e')
                 Token.Div _ -> mul' (AST.Div e e')
                 otherwise   -> Combinator.fail
-      <|> return e
+        <|> return e
 
 unary :: Parser Expr
 unary  = do t <- token
