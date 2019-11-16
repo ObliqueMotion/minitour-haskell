@@ -67,7 +67,7 @@ allTokens = ["identifier"
 allTokensOnDifferentLines = unlines $ allTokens
 allTokensOnSameLine = intercalate " " allTokens
 
-data Case = LexCase   { lexDescription :: String 
+data TestCase = LexCase   { lexDescription :: String 
                       , lexInput :: String 
                       , expectedTokens :: [Token]
                       }
@@ -78,7 +78,7 @@ data Case = LexCase   { lexDescription :: String
 
 testCases = lexCases ++ parseCases
 
-lexCases :: [Case]
+lexCases :: [TestCase]
 lexCases = [ LexCase { lexDescription = "LexCase: Longest match first"
                      , lexInput = "===!=!!====<=<>=>&&&|||"
                      , expectedTokens = [ Token.Eq          (position 1  1)
@@ -189,7 +189,7 @@ lexCases = [ LexCase { lexDescription = "LexCase: Longest match first"
 
            ]
 
-parseCases :: [Case]
+parseCases :: [TestCase]
 parseCases = [ ParseCase  { parseDescription = "ParseCase:  1 +  2"
                           , parseInput = "1 + 2"
                           , expectedExpr = AST.Add (Lit 1) (Lit 2)
@@ -278,4 +278,4 @@ parseCases = [ ParseCase  { parseDescription = "ParseCase:  1 +  2"
                           , parseInput = "-1 + +2 * -3 - +4 / -5 + +6"
                           , expectedExpr = AST.Add (AST.Sub (AST.Add (AST.UMinus (Lit 1)) (AST.Mul (AST.UPlus (Lit 2)) (AST.UMinus (Lit 3)))) (AST.Div (AST.UPlus (Lit 4)) (AST.UMinus (Lit 5)))) (AST.UPlus (Lit 6))
                           }
-                  ]
+             ]
