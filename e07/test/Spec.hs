@@ -79,7 +79,7 @@ data Case = LexCase   { lexDescription :: String
 testCases = lexCases ++ parseCases
 
 lexCases :: [Case]
-lexCases = [ LexCase { lexDescription = "LexCase:    Longest match first"
+lexCases = [ LexCase { lexDescription = "LexCase: Longest match first"
                      , lexInput = "===!=!!====<=<>=>&&&|||"
                      , expectedTokens = [ Token.Eq          (position 1  1)
                                         , Token.Assignment  (position 1  3)
@@ -98,7 +98,7 @@ lexCases = [ LexCase { lexDescription = "LexCase:    Longest match first"
                                         , Token.BitOr       (position 1 23)
                                         ]
                      }
-           , LexCase { lexDescription = "LexCase:    Keywords inside of identifiers"
+           , LexCase { lexDescription = "LexCase: Keywords inside of identifiers"
                      , lexInput = "sift integrity elsewhere truer falseify printer awhile booleaned"
                      , expectedTokens = [ Token.Identifier "sift"      (position 1  1)
                                         , Token.Identifier "integrity" (position 1  6)
@@ -110,7 +110,7 @@ lexCases = [ LexCase { lexDescription = "LexCase:    Longest match first"
                                         , Token.Identifier "booleaned" (position 1  56)
                                         ]
                      }
-           , LexCase { lexDescription = "LexCase:    All possible tokens on same line"
+           , LexCase { lexDescription = "LexCase: All possible tokens on same line"
                      , lexInput = allTokensOnSameLine
                      , expectedTokens = [ Token.Identifier "identifier" (position 1   1) 
                                         , Token.IntLit 12345            (position 1  12)
@@ -148,7 +148,7 @@ lexCases = [ LexCase { lexDescription = "LexCase:    Longest match first"
                                         , Token.Div                     (position 1 113)
                                         ]
                      }
-           , LexCase { lexDescription = "LexCase:    All possible tokens on different lines"
+           , LexCase { lexDescription = "LexCase: All possible tokens on different lines"
                      , lexInput = allTokensOnDifferentLines
                      , expectedTokens = [ Token.Identifier "identifier" (position 1  1)
                                         , Token.IntLit 12345            (position 2  1)
