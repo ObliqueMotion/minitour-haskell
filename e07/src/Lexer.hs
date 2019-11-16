@@ -74,7 +74,7 @@ item = C (\inp -> case inp of
 satisfy :: (Char -> Bool) -> Lexer PChar
 satisfy f = do (x, p) <- item
                if f x then return (x, p)
-                      else Control.Applicative.empty
+                      else Combinator.fail
 
 char :: Char -> Lexer PChar
 char = satisfy . (==)
@@ -126,7 +126,7 @@ symbol :: String -> Lexer Token
 symbol s = do (_,p) <- string s
               case DMS.lookup s reserved of
                         Just t  -> return (t p)
-                        Nothing -> Control.Applicative.empty
+                        Nothing -> Combinator.fail
 
 token :: Lexer (Either Token Diagnostic)
 token  = do skipComments

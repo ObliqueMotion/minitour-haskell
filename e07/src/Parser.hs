@@ -32,7 +32,7 @@ add' e = do t  <- token
             case t of
                 Token.Add _ -> add' (AST.Add e e')
                 Token.Sub _ -> add' (AST.Sub e e')
-                _ -> Control.Applicative.empty
+                otherwise   -> Combinator.fail
       <|> return e
 
 mul :: Parser Expr
@@ -46,7 +46,7 @@ mul' e = do t  <- token
             case t of
                 Token.Mul _ -> mul' (AST.Mul e e')
                 Token.Div _ -> mul' (AST.Div e e')
-                _ -> Control.Applicative.empty
+                otherwise   -> Combinator.fail
       <|> return e
 
 unary :: Parser Expr
@@ -57,11 +57,11 @@ unary  = do t <- token
                Token.Sub   _ -> return (AST.UMinus e)
                Token.Not   _ -> return (AST.LNot   e)
                Token.Tilde _ -> return (AST.BNot   e)
-               _ -> Control.Applicative.empty
+               otherwise     -> Combinator.fail
         <|> primary
 
 primary :: Parser Expr
 primary = do t <- token
              case t of
                 Token.IntLit val _ -> return (Lit val)
-                _ -> Control.Applicative.empty
+                otherwise          -> Combinator.fail

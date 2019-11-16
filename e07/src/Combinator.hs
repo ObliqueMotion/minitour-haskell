@@ -39,3 +39,5 @@ instance Alternative (Combinator input) where
 apply :: Combinator input output -> (input -> [(output, input)])
 apply (C c) = c
 
+fail :: Combinator input output
+fail = Control.Applicative.empty
