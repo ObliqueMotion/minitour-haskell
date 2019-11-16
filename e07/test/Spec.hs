@@ -19,7 +19,7 @@ tokensFrom :: String -> [Token]
 tokensFrom = fst . Lexer.lex
 
 exprFrom :: [Token] -> Expr
-exprFrom = fst . parseExpr
+exprFrom = parse
 
 specs :: Spec
 specs = describe "Lexing and Parsing" $ for_ parseCases test

@@ -1,31 +1,67 @@
 module Parser
-    ( parseExpr
+    ( parse
     ) where
 
 import AST
 import Token
+import Combinator
+import Control.Applicative
 
-parseExpr :: [Token] -> (Expr, [Token])
-parseExpr = parseAdd
+type Parser = Combinator [Token]
 
-parseAdd :: [Token] -> (Expr, [Token])
-parseAdd = parseAdd' . parseMul
-              where parseAdd' (e, (Token.Add _:ts)) = let (e', tss) = parseMul ts in parseAdd' ((AST.Add e e'), tss)
-                    parseAdd' (e, (Token.Sub _:ts)) = let (e', tss) = parseMul ts in parseAdd' ((AST.Sub e e'), tss)
-                    parseAdd' x = x
 
-parseMul :: [Token] -> (Expr, [Token])
-parseMul = parseMul' . parseUnary
-              where parseMul' (e, (Token.Mul _:ts)) = let (e', tss) = parseUnary ts in parseMul' ((AST.Mul e e'), tss)
-                    parseMul' (e, (Token.Div _:ts)) = let (e', tss) = parseUnary ts in parseMul' ((AST.Div e e'), tss)
-                    parseMul' x = x
+token :: Parser Token
+token = C (\inp -> case inp of
+                   []     -> []
+                   (t:ts) -> [(t, ts)])
 
-parseUnary :: [Token] -> (Expr, [Token])
-parseUnary (Token.Add _:ts)   = let (e, tss) = parsePrimary ts in (AST.UPlus  e, tss)
-parseUnary (Token.Sub _:ts)   = let (e, tss) = parsePrimary ts in (AST.UMinus e, tss)
-parseUnary (Token.Not _:ts)   = let (e, tss) = parsePrimary ts in (AST.LNot   e, tss)
-parseUnary (Token.Tilde _:ts) = let (e, tss) = parsePrimary ts in (AST.BNot   e, tss)
-parseUnary ts = parsePrimary ts
+parse :: [Token] -> Expr
+parse = fst . head . apply expr
 
-parsePrimary :: [Token] -> (Expr, [Token])
-parsePrimary (Token.IntLit val _:ts) = (Lit val, ts)
+expr :: Parser Expr
+expr = add
+
+add :: Parser Expr
+add  = do e <- mul
+          add' e
+      <|> mul
+
+add' :: Expr -> Parser Expr
+add' e = do t  <- token
+            e' <- mul
+            case t of
+                Token.Add _ -> add' (AST.Add e e')
+                Token.Sub _ -> add' (AST.Sub e e')
+                _ -> Control.Applicative.empty
+      <|> return e
+
+mul :: Parser Expr
+mul  = do e <- unary
+          mul' e
+      <|> unary
+
+mul' :: Expr -> Parser Expr
+mul' e = do t  <- token
+            e' <- unary
+            case t of
+                Token.Mul _ -> mul' (AST.Mul e e')
+                Token.Div _ -> mul' (AST.Div e e')
+                _ -> Control.Applicative.empty
+      <|> return e
+
+unary :: Parser Expr
+unary  = do t <- token
+            e <- primary
+            case t of 
+               Token.Add   _ -> return (AST.UPlus  e)
+               Token.Sub   _ -> return (AST.UMinus e)
+               Token.Not   _ -> return (AST.LNot   e)
+               Token.Tilde _ -> return (AST.BNot   e)
+               _ -> Control.Applicative.empty
+        <|> primary
+
+primary :: Parser Expr
+primary = do t <- token
+             case t of
+                Token.IntLit val _ -> return (Lit val)
+                _ -> Control.Applicative.empty
