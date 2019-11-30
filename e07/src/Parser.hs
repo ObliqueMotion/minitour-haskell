@@ -11,118 +11,117 @@ import Control.Applicative
 type Parser = Combinator [Token]
 type TokenConstructor = (Position -> Token)
 
+parse :: [Token] -> Expr
+parse = fst . head . apply parseExpr
 
-token :: Parser Token
-token = C (\inp -> case inp of
-                        []     -> []
-                        (t:ts) -> [(t, ts)])
+parseToken :: Parser Token
+parseToken = C (\inp -> case inp of
+                             []     -> []
+                             (t:ts) -> [(t, ts)])
 
 require :: TokenConstructor -> Parser ()
 require c = let lhs = c start
-            in do rhs <- token
+            in do rhs <- parseToken
                   if tokEq lhs rhs
                   then return ()
                   else Combinator.fail
 
-parse :: [Token] -> Expr
-parse = fst . head . apply expr
+parseStatements :: TokenConstructor -> Parser [Statement]
+parseStatements stopCondition = do ss <- many parseStatement
+                                   require stopCondition
+                                   return ss
 
-statements :: TokenConstructor -> Parser [Statement]
-statements stopCondition = do ss <- many statement
-                              require stopCondition
-                              return ss
+parseStatement :: Parser Statement
+parseStatement = do t <- parseToken
+                    case t of
+                         Token.Semicolon _      -> return AST.Empty
+                         Token.Identifier val _ -> parseAssignment val
+                         Token.OpenBrace _      -> parseBlock
+                         Token.While _          -> parseWhile
+                         Token.If _             -> parseIf
+                         otherwise -> Combinator.fail
 
-statement :: Parser Statement
-statement = do t <- token
-               case t of
-                    Token.Semicolon _      -> return AST.Empty
-                    Token.Identifier val _ -> assign val
-                    Token.OpenBrace _      -> block
-                    Token.While _          -> while
-                    Token.If _             -> parseIf
-                    otherwise -> Combinator.fail
+parseAssignment :: String -> Parser Statement
+parseAssignment lhs = do require Token.Assignment
+                         rhs <- parseExpr
+                         require Token.Semicolon
+                         return $ AST.Assign lhs rhs
 
-assign :: String -> Parser Statement
-assign lhs = do require Token.Assignment
-                rhs <- expr
-                require Token.Semicolon
-                return $ AST.Assign lhs rhs
+parseBlock :: Parser Statement
+parseBlock = do ss <- parseStatements Token.CloseBrace 
+                return $ Block ss
 
-block :: Parser Statement
-block = do ss <- statements Token.CloseBrace 
-           return $ Block ss
-
-while :: Parser Statement
-while = do test' <- test
-           body  <- statement
-           return $ AST.While test' body
+parseWhile :: Parser Statement
+parseWhile = do test <- parseTest
+                body  <- parseStatement
+                return $ AST.While test body
 
 parseIf :: Parser Statement
-parseIf = do test'   <- test
-             ifTrue  <- statement
+parseIf = do test    <- parseTest
+             ifTrue  <- parseStatement
              ifFalse <- do require Token.Else
-                           statement
+                           parseStatement
                        <|> return AST.Empty
-             return $ AST.If test' ifTrue ifFalse
+             return $ AST.If test ifTrue ifFalse
 
-test :: Parser Expr
-test = do require Token.OpenParen
-          e <- expr
-          require Token.CloseParen
-          return e
+parseTest :: Parser Expr
+parseTest = do require Token.OpenParen
+               e <- parseExpr
+               require Token.CloseParen
+               return e
 
-expr :: Parser Expr
-expr = add
+parseExpr :: Parser Expr
+parseExpr = parseAdd
 
-add :: Parser Expr
-add  = do e <- mul
-          add' e
-      <|> mul
+parseAdd :: Parser Expr
+parseAdd  = do e <- parseMul
+               parseAdd' e
+           <|> parseMul
 
-add' :: Expr -> Parser Expr
-add' e = do t  <- token
-            case t of
-                 Token.Add _ -> do e' <- mul
-                                   add' $ AST.Add e e'
-                 Token.Sub _ -> do e' <- mul
-                                   add' $ AST.Sub e e'
-                 otherwise   -> Combinator.fail
-        <|> return e
+parseAdd' :: Expr -> Parser Expr
+parseAdd' e = do t  <- parseToken
+                 case t of
+                      Token.Add _ -> do e' <- parseMul
+                                        parseAdd' $ AST.Add e e'
+                      Token.Sub _ -> do e' <- parseMul
+                                        parseAdd' $ AST.Sub e e'
+                      otherwise   -> Combinator.fail
+             <|> return e
 
-mul :: Parser Expr
-mul  = do e <- unary
-          mul' e
-      <|> unary
+parseMul :: Parser Expr
+parseMul  = do e <- parseUnary
+               parseMul' e
+           <|> parseUnary
 
-mul' :: Expr -> Parser Expr
-mul' e = do t  <- token
-            case t of
-                 Token.Mul _ -> do e' <- unary
-                                   mul' $ AST.Mul e e'
-                 Token.Div _ -> do e' <- unary
-                                   mul' $ AST.Div e e'
-                 otherwise   -> Combinator.fail
-        <|> return e
+parseMul' :: Expr -> Parser Expr
+parseMul' e = do t  <- parseToken
+                 case t of
+                      Token.Mul _ -> do e' <- parseUnary
+                                        parseMul' $ AST.Mul e e'
+                      Token.Div _ -> do e' <- parseUnary
+                                        parseMul' $ AST.Div e e'
+                      otherwise   -> Combinator.fail
+             <|> return e
 
-unary :: Parser Expr
-unary  = do t <- token
-            e <- primary
-            case t of 
-                 Token.Add   _ -> return $ AST.UPlus  e
-                 Token.Sub   _ -> return $ AST.UMinus e
-                 Token.Not   _ -> return $ AST.LNot   e
-                 Token.Tilde _ -> return $ AST.BNot   e
-                 otherwise     -> Combinator.fail
-        <|> primary
+parseUnary :: Parser Expr
+parseUnary  = do t <- parseToken
+                 e <- parsePrimary
+                 case t of 
+                      Token.Add   _ -> return $ AST.UPlus  e
+                      Token.Sub   _ -> return $ AST.UMinus e
+                      Token.Not   _ -> return $ AST.LNot   e
+                      Token.Tilde _ -> return $ AST.BNot   e
+                      otherwise     -> Combinator.fail
+             <|> parsePrimary
 
-primary :: Parser Expr
-primary = do t <- token
-             case t of
-                  Token.IntLit val _     -> return $ AST.IntLit val
-                  Token.True' _          -> return $ AST.BoolLit True
-                  Token.False' _         -> return $ AST.BoolLit False
-                  Token.Identifier val _ -> return $ AST.Identifier val
-                  Token.OpenParen _      -> do e <- expr
-                                               require Token.CloseParen
-                                               return e
-                  otherwise              -> Combinator.fail
+parsePrimary :: Parser Expr
+parsePrimary = do t <- parseToken
+                  case t of
+                       Token.IntLit val _     -> return $ AST.IntLit val
+                       Token.True' _          -> return $ AST.BoolLit True
+                       Token.False' _         -> return $ AST.BoolLit False
+                       Token.Identifier val _ -> return $ AST.Identifier val
+                       Token.OpenParen _      -> do e <- parseExpr
+                                                    require Token.CloseParen
+                                                    return e
+                       otherwise              -> Combinator.fail
