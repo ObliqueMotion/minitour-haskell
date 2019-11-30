@@ -39,6 +39,7 @@ statement = do t <- token
                     Token.Identifier val _ -> assign val
                     Token.OpenBrace _      -> block
                     Token.While _          -> while
+                    Token.If _             -> parseIf
                     otherwise -> Combinator.fail
 
 assign :: String -> Parser Statement
@@ -55,6 +56,14 @@ while :: Parser Statement
 while = do test' <- test
            body  <- statement
            return $ AST.While test' body
+
+parseIf :: Parser Statement
+parseIf = do test'   <- test
+             ifTrue  <- statement
+             ifFalse <- do require Token.Else
+                           statement
+                       <|> return AST.Empty
+             return $ AST.If test' ifTrue ifFalse
 
 test :: Parser Expr
 test = do require Token.OpenParen

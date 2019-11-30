@@ -9,7 +9,7 @@ data Statement = Empty
                | Assign String Expr
                | Block [Statement]
                | While Expr Statement
-               | If
+               | If Expr Statement Statement
                | Print
                | VarDecl
 
