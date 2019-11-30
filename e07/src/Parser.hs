@@ -39,6 +39,7 @@ parseStatement = do t <- parseToken
                          Token.OpenBrace _      -> parseBlock
                          Token.While _          -> parseWhile
                          Token.If _             -> parseIf
+                         Token.Print _          -> parsePrint
                          otherwise -> Combinator.fail
 
 parseAssignment :: String -> Parser Statement
@@ -69,6 +70,11 @@ parseTest = do require Token.OpenParen
                e <- parseExpr
                require Token.CloseParen
                return e
+
+parsePrint :: Parser Statement
+parsePrint = do e <- parseExpr
+                require Token.Semicolon
+                return $ AST.Print e
 
 parseExpr :: Parser Expr
 parseExpr = parseAdd

@@ -10,7 +10,7 @@ data Statement = Empty
                | Block [Statement]
                | While Expr Statement
                | If Expr Statement Statement
-               | Print
+               | Print Expr
                | VarDecl
 
 
