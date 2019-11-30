@@ -1,9 +1,13 @@
 module AST
     ( Expr(..)
     , Statement(..)
+    , Type(..)
     ) where
 
 import Position
+
+data Type = Int'
+          | Boolean
 
 data Statement = Empty
                | Assign String Expr
@@ -11,7 +15,7 @@ data Statement = Empty
                | While Expr Statement
                | If Expr Statement Statement
                | Print Expr
-               | VarDecl
+               | VarDecl Type [Expr]
 
 
 data Expr = IntLit Int

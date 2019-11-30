@@ -40,7 +40,7 @@ parseStatement = do t <- parseToken
                          Token.While _          -> parseWhile
                          Token.If _             -> parseIf
                          Token.Print _          -> parsePrint
-                         otherwise -> Combinator.fail
+                         otherwise              -> parseVarDecl
 
 parseAssignment :: String -> Parser Statement
 parseAssignment lhs = do require Token.Assignment
@@ -75,6 +75,33 @@ parsePrint :: Parser Statement
 parsePrint = do e <- parseExpr
                 require Token.Semicolon
                 return $ AST.Print e
+
+parseVarDecl :: Parser Statement
+parseVarDecl = do t <- parseType
+                  vars <- parseIds
+                  require Token.Semicolon
+                  return $ VarDecl t vars
+
+parseType :: Parser Type
+parseType = do t <- parseToken
+               case t of
+                    Token.Int' _    -> return AST.Int'
+                    Token.Boolean _ -> return AST.Boolean
+                    otherwise       -> Combinator.fail
+
+parseId :: Parser Expr
+parseId = do t <- parseToken
+             case t of 
+                  Token.Identifier s _ -> return $ AST.Identifier s
+                  otherwise            -> Combinator.fail
+
+parseIds :: Parser [Expr]
+parseIds = do ids <- many (do id <- parseId
+                              require Token.Comma
+                              return id)
+              id  <- parseId
+              return (id : ids)
+
 
 parseExpr :: Parser Expr
 parseExpr = parseAdd
