@@ -117,16 +117,16 @@ intLit = do (x,p) <- int
 ident :: Lexer Token
 ident = do (x,p) <- satisfy isJavaIdentifierStart
            xps   <- many (satisfy isJavaIdentifierPart)
-           let xs = fst <$> xps
-           return (case DMS.lookup (x:xs) reserved of
+           let xs = x : (fst <$> xps)
+           return (case DMS.lookup xs reserved of
                         Just token -> token p
-                        Nothing    -> (Identifier (x:xs) p))
+                        Nothing    -> Identifier xs p)
 
 symbol :: String -> Lexer Token
 symbol s = do (_,p) <- string s
               case DMS.lookup s reserved of
-                        Just t  -> return (t p)
-                        Nothing -> Combinator.fail
+                   Just t  -> return (t p)
+                   Nothing -> Combinator.fail
 
 token :: Lexer (Either Token Diagnostic)
 token  = do skipComments
@@ -162,8 +162,10 @@ token  = do skipComments
                Right <$> return (invalidCharacter x p)
 
 tokenize :: Lexer [Either Token Diagnostic]
-tokenize = many (do skipSpace 
-                    token)
+tokenize = many (skipSpace >> token)
 
 lex :: String -> ([Token], [Diagnostic])
-lex input = partitionEithers $ fst $ head $ apply tokenize (input, start)
+lex input = partitionEithers
+          $ fst
+          $ head
+          $ apply tokenize (input, start)

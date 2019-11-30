@@ -1,8 +1,18 @@
 module AST
     ( Expr(..)
+    , Statement(..)
     ) where
 
 import Position
+
+data Statement = Empty
+               | Assign String Expr
+               | Block [Statement]
+               | While Expr Statement
+               | If
+               | Print
+               | VarDecl
+
 
 data Expr = IntLit Int
           | Lt     Expr Expr
