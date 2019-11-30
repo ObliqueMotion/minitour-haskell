@@ -1,15 +1,9 @@
 // A simple test
-// A simple test
-// A simple test
-// A simple test
-// A simple test
 int i, t;
-// A simple test
 i = 0;
 t = 0;
-while/*asdf*/(i<10) {          //
+while (i + 1) {
   i = i + 1;
-  // Yodle /* 
-  t = t + i;
+  t = t + 1;
 }
 print t;

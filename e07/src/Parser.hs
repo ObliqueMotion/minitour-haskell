@@ -11,8 +11,8 @@ import Control.Applicative
 type Parser = Combinator [Token]
 type TokenConstructor = (Position -> Token)
 
-parse :: [Token] -> Expr
-parse = fst . head . apply parseExpr
+parse :: [Token] -> [Statement]
+parse = fst . head . apply (parseStatements Token.EndInput)
 
 parseToken :: Parser Token
 parseToken = C (\inp -> case inp of
@@ -40,7 +40,8 @@ parseStatement = do t <- parseToken
                          Token.While _          -> parseWhile
                          Token.If _             -> parseIf
                          Token.Print _          -> parsePrint
-                         otherwise              -> parseVarDecl
+                         otherwise              -> Combinator.fail
+                <|> parseVarDecl
 
 parseAssignment :: String -> Parser Statement
 parseAssignment lhs = do require Token.Assignment
@@ -93,14 +94,14 @@ parseId :: Parser Expr
 parseId = do t <- parseToken
              case t of 
                   Token.Identifier s _ -> return $ AST.Identifier s
-                  otherwise            -> Combinator.fail
+                  otherwise            -> return $ AST.Identifier "toast"
 
 parseIds :: Parser [Expr]
 parseIds = do ids <- many (do id <- parseId
                               require Token.Comma
                               return id)
               id  <- parseId
-              return (id : ids)
+              return (ids ++ [id])
 
 
 parseExpr :: Parser Expr

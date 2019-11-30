@@ -162,7 +162,8 @@ token  = do skipComments
                Right <$> return (invalidCharacter x p)
 
 tokenize :: Lexer [Either Token Diagnostic]
-tokenize = many (skipSpace >> token)
+tokenize = do ts <- many (skipSpace >> token)
+              return $ ts ++ [Left (EndInput start)]
 
 lex :: String -> ([Token], [Diagnostic])
 lex input = partitionEithers

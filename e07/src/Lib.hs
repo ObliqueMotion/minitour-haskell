@@ -3,7 +3,7 @@ module Lib
     ) where
 
 import Lexer
-import AST
+import Parser
 import Handler
 import Token
 import Diagnostic
@@ -33,7 +33,8 @@ compiler [fileName] = do
         input <- readFile path
         putStrLn input
         let (tokens, diagnostics) = Lexer.lex input
-        if null diagnostics then mapM_ print tokens
+        let statements = Parser.parse tokens
+        if null diagnostics then mapM_ print statements
                             else print $ foldl report handler diagnostics
     else
         putStrLn $ show $ report handler (failure ("File (" ++ path ++ ") does not exist.") (position 0 0))

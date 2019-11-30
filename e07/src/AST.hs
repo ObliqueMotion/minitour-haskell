@@ -8,6 +8,7 @@ import Position
 
 data Type = Int'
           | Boolean
+          deriving(Show, Eq)
 
 data Statement = Empty
                | Assign String Expr
@@ -16,6 +17,7 @@ data Statement = Empty
                | If Expr Statement Statement
                | Print Expr
                | VarDecl Type [Expr]
+               deriving(Show, Eq)
 
 
 data Expr = IntLit Int
