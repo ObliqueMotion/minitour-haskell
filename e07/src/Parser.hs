@@ -15,6 +15,12 @@ token = C (\inp -> case inp of
                    []     -> []
                    (t:ts) -> [(t, ts)])
 
+requireCloseParen :: Parser()
+requireCloseParen = do t <- token
+                       case t of
+                            Token.CloseParen _ -> return ()
+                            otherwise          -> Combinator.fail
+ 
 parse :: [Token] -> Expr
 parse = fst . head . apply expr
 
@@ -30,8 +36,8 @@ add' :: Expr -> Parser Expr
 add' e = do t  <- token
             e' <- mul
             case t of
-                Token.Add _ -> add' (AST.Add e e')
-                Token.Sub _ -> add' (AST.Sub e e')
+                Token.Add _ -> add' $ AST.Add e e'
+                Token.Sub _ -> add' $ AST.Sub e e'
                 otherwise   -> Combinator.fail
         <|> return e
 
@@ -44,8 +50,8 @@ mul' :: Expr -> Parser Expr
 mul' e = do t  <- token
             e' <- unary
             case t of
-                Token.Mul _ -> mul' (AST.Mul e e')
-                Token.Div _ -> mul' (AST.Div e e')
+                Token.Mul _ -> mul' $ AST.Mul e e'
+                Token.Div _ -> mul' $ AST.Div e e'
                 otherwise   -> Combinator.fail
         <|> return e
 
@@ -53,15 +59,21 @@ unary :: Parser Expr
 unary  = do t <- token
             e <- primary
             case t of 
-               Token.Add   _ -> return (AST.UPlus  e)
-               Token.Sub   _ -> return (AST.UMinus e)
-               Token.Not   _ -> return (AST.LNot   e)
-               Token.Tilde _ -> return (AST.BNot   e)
+               Token.Add   _ -> return $ AST.UPlus  e
+               Token.Sub   _ -> return $ AST.UMinus e
+               Token.Not   _ -> return $ AST.LNot   e
+               Token.Tilde _ -> return $ AST.BNot   e
                otherwise     -> Combinator.fail
         <|> primary
 
 primary :: Parser Expr
 primary = do t <- token
              case t of
-                Token.IntLit val _ -> return (Lit val)
-                otherwise          -> Combinator.fail
+                Token.IntLit val _     -> return $ AST.IntLit val
+                Token.True' _          -> return $ AST.BoolLit True
+                Token.False' _         -> return $ AST.BoolLit False
+                Token.Identifier val _ -> return $ AST.Identifier val
+                Token.OpenParen _      -> do e <- expr
+                                             requireCloseParen
+                                             return e
+                otherwise              -> Combinator.fail

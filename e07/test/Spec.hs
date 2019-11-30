@@ -192,90 +192,94 @@ lexCases = [ LexCase { lexDescription = "LexCase: Longest match first"
 parseCases :: [TestCase]
 parseCases = [ ParseCase  { parseDescription = "ParseCase:  1 +  2"
                           , parseInput = "1 + 2"
-                          , expectedExpr = AST.Add (Lit 1) (Lit 2)
+                          , expectedExpr = AST.Add (AST.IntLit 1) (AST.IntLit 2)
                           }
              , ParseCase  { parseDescription = "ParseCase:  1 -  2"
                           , parseInput = "1 - 2"
-                          , expectedExpr = AST.Sub (Lit 1) (Lit 2)
+                          , expectedExpr = AST.Sub (AST.IntLit 1) (AST.IntLit 2)
                           }
              , ParseCase  { parseDescription = "ParseCase:  1 + -2"
                           , parseInput = "1 + -2"
-                          , expectedExpr = AST.Add (Lit 1) (AST.UMinus (Lit 2))
+                          , expectedExpr = AST.Add (AST.IntLit 1) (AST.UMinus (AST.IntLit 2))
                           }        
              , ParseCase  { parseDescription = "ParseCase: -1 - +2"
                           , parseInput = "-1 - +2"
-                          , expectedExpr = AST.Sub (AST.UMinus (Lit 1)) (AST.UPlus (Lit 2))
+                          , expectedExpr = AST.Sub (AST.UMinus (AST.IntLit 1)) (AST.UPlus (AST.IntLit 2))
                           } 
              , ParseCase  { parseDescription = "ParseCase:  1 *  2"
                           , parseInput = "1 * 2"
-                          , expectedExpr = AST.Mul (Lit 1) (Lit 2)
+                          , expectedExpr = AST.Mul (AST.IntLit 1) (AST.IntLit 2)
                           }
              , ParseCase  { parseDescription = "ParseCase:  1 /  2"
                           , parseInput = "1 / 2"
-                          , expectedExpr = AST.Div (Lit 1) (Lit 2)
+                          , expectedExpr = AST.Div (AST.IntLit 1) (AST.IntLit 2)
                           }
              , ParseCase  { parseDescription = "ParseCase:  1 * -2"
                           , parseInput = "1 * -2"
-                          , expectedExpr = AST.Mul (Lit 1) (AST.UMinus (Lit 2))
+                          , expectedExpr = AST.Mul (AST.IntLit 1) (AST.UMinus (AST.IntLit 2))
                           }        
              , ParseCase  { parseDescription = "ParseCase: -1 / +2"
                           , parseInput = "-1 / +2"
-                          , expectedExpr = AST.Div (AST.UMinus (Lit 1)) (AST.UPlus (Lit 2))
+                          , expectedExpr = AST.Div (AST.UMinus (AST.IntLit 1)) (AST.UPlus (AST.IntLit 2))
                           } 
              , ParseCase  { parseDescription = "ParseCase:  1 + 2 * 3"
                           , parseInput = "1 + 2 * 3"
-                          , expectedExpr = AST.Add (Lit 1) (AST.Mul (Lit 2) (Lit 3))
+                          , expectedExpr = AST.Add (AST.IntLit 1) (AST.Mul (AST.IntLit 2) (AST.IntLit 3))
                           }
              , ParseCase  { parseDescription = "ParseCase:  1 * 2 + 3"
                           , parseInput = "1 * 2 + 3"
-                          , expectedExpr = AST.Add (AST.Mul (Lit 1) (Lit 2)) (Lit 3)
+                          , expectedExpr = AST.Add (AST.Mul (AST.IntLit 1) (AST.IntLit 2)) (AST.IntLit 3)
+                          }
+             , ParseCase  { parseDescription = "ParseCase:  ((1) -  (2))"
+                          , parseInput = "((1) - (2))"
+                          , expectedExpr = AST.Sub (AST.IntLit 1) (AST.IntLit 2)
                           }
              , ParseCase  { parseDescription = "ParseCase:  1 + 2 + 3 + 4 + 5"
                           , parseInput = "1 + 2 + 3 + 4 + 5"
-                          , expectedExpr = AST.Add (AST.Add (AST.Add (AST.Add (Lit 1) (Lit 2)) (Lit 3)) (Lit 4)) (Lit 5)
+                          , expectedExpr = AST.Add (AST.Add (AST.Add (AST.Add (AST.IntLit 1) (AST.IntLit 2)) (AST.IntLit 3)) (AST.IntLit 4)) (AST.IntLit 5)
                           }
              , ParseCase  { parseDescription = "ParseCase:  1 - 2 - 3 - 4 - 5"
                           , parseInput = "1 - 2 - 3 - 4 - 5"
-                          , expectedExpr = AST.Sub (AST.Sub (AST.Sub (AST.Sub (Lit 1) (Lit 2)) (Lit 3)) (Lit 4)) (Lit 5)
+                          , expectedExpr = AST.Sub (AST.Sub (AST.Sub (AST.Sub (AST.IntLit 1) (AST.IntLit 2)) (AST.IntLit 3)) (AST.IntLit 4)) (AST.IntLit 5)
                           }
              , ParseCase  { parseDescription = "ParseCase:  1 * 2 * 3 * 4 * 5"
                           , parseInput = "1 * 2 * 3 * 4 * 5"
-                          , expectedExpr = AST.Mul (AST.Mul (AST.Mul (AST.Mul (Lit 1) (Lit 2)) (Lit 3)) (Lit 4)) (Lit 5)
+                          , expectedExpr = AST.Mul (AST.Mul (AST.Mul (AST.Mul (AST.IntLit 1) (AST.IntLit 2)) (AST.IntLit 3)) (AST.IntLit 4)) (AST.IntLit 5)
                           }
              , ParseCase  { parseDescription = "ParseCase:  1 / 2 / 3 / 4 / 5"
                           , parseInput = "1 / 2 / 3 / 4 / 5"
-                          , expectedExpr = AST.Div (AST.Div (AST.Div (AST.Div (Lit 1) (Lit 2)) (Lit 3)) (Lit 4)) (Lit 5)
+                          , expectedExpr = AST.Div (AST.Div (AST.Div (AST.Div (AST.IntLit 1) (AST.IntLit 2)) (AST.IntLit 3)) (AST.IntLit 4)) (AST.IntLit 5)
                           }
              , ParseCase  { parseDescription = "ParseCase:  1 + 2 - 3 + 4 - 5"
                           , parseInput = "1 + 2 - 3 + 4 - 5"
-                          , expectedExpr = AST.Sub (AST.Add (AST.Sub (AST.Add (Lit 1) (Lit 2)) (Lit 3)) (Lit 4)) (Lit 5)
+                          , expectedExpr = AST.Sub (AST.Add (AST.Sub (AST.Add (AST.IntLit 1) (AST.IntLit 2)) (AST.IntLit 3)) (AST.IntLit 4)) (AST.IntLit 5)
                           }
              , ParseCase  { parseDescription = "ParseCase:  1 * 2 / 3 * 4 / 5"
                           , parseInput = "1 * 2 / 3 * 4 / 5"
-                          , expectedExpr = AST.Div (AST.Mul (AST.Div (AST.Mul (Lit 1) (Lit 2)) (Lit 3)) (Lit 4)) (Lit 5)
+                          , expectedExpr = AST.Div (AST.Mul (AST.Div (AST.Mul (AST.IntLit 1) (AST.IntLit 2)) (AST.IntLit 3)) (AST.IntLit 4)) (AST.IntLit 5)
                           }
              , ParseCase  { parseDescription = "ParseCase:  1 * 2 * 3 + 4 * 5"
                           , parseInput = "1 * 2 * 3 + 4 * 5"
-                          , expectedExpr = AST.Add (AST.Mul (AST.Mul (Lit 1) (Lit 2)) (Lit 3)) (AST.Mul (Lit 4) (Lit 5))
+                          , expectedExpr = AST.Add (AST.Mul (AST.Mul (AST.IntLit 1) (AST.IntLit 2)) (AST.IntLit 3)) (AST.Mul (AST.IntLit 4) (AST.IntLit 5))
                           }
              , ParseCase  { parseDescription = "ParseCase:  1 * 2 - 3 * 4 * 5"
                           , parseInput = "1 * 2 - 3 * 4 * 5"
-                          , expectedExpr = AST.Sub (AST.Mul (Lit 1) (Lit 2)) (AST.Mul (AST.Mul (Lit 3) (Lit 4)) (Lit 5))
+                          , expectedExpr = AST.Sub (AST.Mul (AST.IntLit 1) (AST.IntLit 2)) (AST.Mul (AST.Mul (AST.IntLit 3) (AST.IntLit 4)) (AST.IntLit 5))
                           }
              , ParseCase  { parseDescription = "ParseCase:  1 / 2 / 3 + 4 / 5"
                           , parseInput = "1 / 2 / 3 + 4 / 5"
-                          , expectedExpr = AST.Add (AST.Div (AST.Div (Lit 1) (Lit 2)) (Lit 3)) (AST.Div (Lit 4) (Lit 5))
+                          , expectedExpr = AST.Add (AST.Div (AST.Div (AST.IntLit 1) (AST.IntLit 2)) (AST.IntLit 3)) (AST.Div (AST.IntLit 4) (AST.IntLit 5))
                           }
              , ParseCase  { parseDescription = "ParseCase:  1 / 2 - 3 / 4 / 5"
                           , parseInput = "1 / 2 - 3 / 4 / 5"
-                          , expectedExpr = AST.Sub (AST.Div (Lit 1) (Lit 2)) (AST.Div (AST.Div (Lit 3) (Lit 4)) (Lit 5))
+                          , expectedExpr = AST.Sub (AST.Div (AST.IntLit 1) (AST.IntLit 2)) (AST.Div (AST.Div (AST.IntLit 3) (AST.IntLit 4)) (AST.IntLit 5))
                           }
              , ParseCase  { parseDescription = "ParseCase:  1 + 2 * 3 - 4 / 5 + 6"
                           , parseInput = "1 + 2 * 3 - 4 / 5 + 6"
-                          , expectedExpr = AST.Add (AST.Sub (AST.Add (Lit 1) (AST.Mul (Lit 2) (Lit 3))) (AST.Div (Lit 4) (Lit 5))) (Lit 6)
+                          , expectedExpr = AST.Add (AST.Sub (AST.Add (AST.IntLit 1) (AST.Mul (AST.IntLit 2) (AST.IntLit 3))) (AST.Div (AST.IntLit 4) (AST.IntLit 5))) (AST.IntLit 6)
                           }
              , ParseCase  { parseDescription = "ParseCase: -1 + +2 * -3 - +4 / -5 + +6"
                           , parseInput = "-1 + +2 * -3 - +4 / -5 + +6"
-                          , expectedExpr = AST.Add (AST.Sub (AST.Add (AST.UMinus (Lit 1)) (AST.Mul (AST.UPlus (Lit 2)) (AST.UMinus (Lit 3)))) (AST.Div (AST.UPlus (Lit 4)) (AST.UMinus (Lit 5)))) (AST.UPlus (Lit 6))
+                          , expectedExpr = AST.Add (AST.Sub (AST.Add (AST.UMinus (AST.IntLit 1)) (AST.Mul (AST.UPlus (AST.IntLit 2)) (AST.UMinus (AST.IntLit 3)))) (AST.Div (AST.UPlus (AST.IntLit 4)) (AST.UMinus (AST.IntLit 5)))) (AST.UPlus (AST.IntLit 6))
                           }
              ]
