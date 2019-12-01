@@ -105,7 +105,79 @@ parseIds = do ids <- many (do id <- parseId
 
 
 parseExpr :: Parser Expr
-parseExpr = parseAdd
+parseExpr = parseLOr
+
+parseLOr :: Parser Expr
+parseLOr = do lhs <- parseLAnd
+              op  <- parseToken
+              case op of
+                   Token.LogicalOr _ -> do rhs <- parseLAnd
+                                           return $ AST.LOr lhs rhs
+                   otherwise         -> Combinator.fail
+          <|> parseLAnd
+
+parseLAnd :: Parser Expr
+parseLAnd = do lhs <- parseBOr
+               op  <- parseToken
+               case op of
+                    Token.LogicalAnd _ -> do rhs <- parseBOr
+                                             return $ AST.LAnd lhs rhs
+                    otherwise          -> Combinator.fail
+           <|> parseBOr
+
+parseBOr :: Parser Expr
+parseBOr = do lhs <- parseBXor
+              op  <- parseToken
+              case op of
+                   Token.BitOr _ -> do rhs <- parseBXor
+                                       return $ AST.BOr lhs rhs
+                   otherwise     -> Combinator.fail
+          <|> parseBXor
+
+parseBXor :: Parser Expr
+parseBXor = do lhs <- parseBAnd
+               op  <- parseToken
+               case op of
+                    Token.BitXor _ -> do rhs <- parseBAnd
+                                         return $ AST.BXor lhs rhs
+                    otherwise      -> Combinator.fail
+           <|> parseBAnd
+
+parseBAnd :: Parser Expr
+parseBAnd = do lhs <- parseEql
+               op  <- parseToken
+               case op of
+                    Token.BitAnd _ -> do rhs <- parseEql
+                                         return $ AST.BAnd lhs rhs
+                    otherwise      -> Combinator.fail
+           <|> parseEql
+
+parseEql :: Parser Expr
+parseEql = do lhs <- parseRel
+              op  <- parseToken
+              case op of
+                   Token.Eq _    -> do rhs <- parseRel
+                                       return $ AST.Eql lhs rhs
+                   Token.NotEq _ -> do rhs <- parseRel
+                                       return $ AST.Neq lhs rhs
+                   otherwise     -> Combinator.fail
+          <|> parseRel
+
+parseRel :: Parser Expr
+parseRel = do lhs <- parseAdd
+              op  <- parseToken
+              case op of
+                   Token.LessThan _    -> do rhs <- parseAdd
+                                             return $ AST.Lt lhs rhs
+                   Token.LessOrEq _    -> do rhs <- parseAdd
+                                             return $ AST.Lte lhs rhs
+                   Token.GreaterThan _ -> do rhs <- parseAdd
+                                             return $ AST.Gt lhs rhs
+                   Token.GreaterOrEq _ -> do rhs <- parseAdd
+                                             return $ AST.Gte lhs rhs
+                   otherwise           -> Combinator.fail
+          <|> parseAdd
+                                            
 
 parseAdd :: Parser Expr
 parseAdd  = do e <- parseMul
