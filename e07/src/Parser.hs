@@ -23,8 +23,8 @@ require :: TokenConstructor -> Parser ()
 require c = let lhs = c start
             in do rhs <- parseToken
                   if tokEq lhs rhs
-                  then return ()
-                  else Combinator.fail
+                     then return ()
+                     else Combinator.fail
 
 parseStatements :: TokenConstructor -> Parser [Statement]
 parseStatements stopCondition = do ss <- many parseStatement
@@ -78,7 +78,7 @@ parsePrint = do e <- parseExpr
                 return $ AST.Print e
 
 parseVarDecl :: Parser Statement
-parseVarDecl = do t <- parseType
+parseVarDecl = do t    <- parseType
                   vars <- parseIds
                   require Token.Semicolon
                   return $ VarDecl t vars
@@ -102,7 +102,6 @@ parseIds = do ids <- many (do id <- parseId
                               return id)
               id  <- parseId
               return (ids ++ [id])
-
 
 parseExpr :: Parser Expr
 parseExpr = parseLOr

@@ -19,14 +19,14 @@ main = mapM_ (hspecWith defaultConfig {configFastFail = False}) [specs]
 tokensFrom :: String -> [Token]
 tokensFrom = fst . Lexer.lex
 
-stmtFrom :: [Token] -> [Statement]
-stmtFrom = parse
+stmtsFrom :: [Token] -> [Statement]
+stmtsFrom = parse
 
 specs :: Spec
 specs = describe "Lexing and Parsing" $ for_ testCases test
     where test LexCase{..}   = it lexDescription $ (tokensFrom lexInput) `shouldBe` expectedTokens
           test ParseCase{..} = it parseDescription $ let tokens = tokensFrom parseInput 
-                                                      in (stmtFrom tokens) `shouldBe` [expectedStmt]
+                                                         in (stmtsFrom tokens) `shouldBe` expectedStmts
 
 allTokens = ["identifier"
             , "12345"
@@ -73,7 +73,7 @@ data TestCase = LexCase   { lexDescription :: String
                       }
           | ParseCase { parseDescription :: String
                       , parseInput :: String
-                      , expectedStmt :: Statement
+                      , expectedStmts :: [Statement]
                       }
 
 testCases = lexCases ++ parseCases
@@ -194,96 +194,174 @@ lexCases = [ LexCase { lexDescription = "LexCase: Longest match first"
            ]
 
 parseCases :: [TestCase]
-parseCases = [ ParseCase  { parseDescription = "ParseCase:  1 +  2"
-                          , parseInput = "1 + 2"
-                          , expectedStmt = AST.Add (AST.IntLit 1) (AST.IntLit 2)
+parseCases = [ 
+               ParseCase  { parseDescription = "ParseCase: ;;;;"
+                          , parseInput = ";;;;"
+                          , expectedStmts = [Empty, Empty, Empty, Empty]
                           }
-             , ParseCase  { parseDescription = "ParseCase:  1 -  2"
-                          , parseInput = "1 - 2"
-                          , expectedStmt = AST.Sub (AST.IntLit 1) (AST.IntLit 2)
+             , ParseCase  { parseDescription = "ParseCase: i = a || b;"
+                          , parseInput = "i = a || b;"
+                          , expectedStmts = [Assign "i" (AST.LOr (AST.Identifier "a") (AST.Identifier "b"))]
                           }
-             , ParseCase  { parseDescription = "ParseCase:  1 + -2"
-                          , parseInput = "1 + -2"
-                          , expectedStmt = AST.Add (AST.IntLit 1) (AST.UMinus (AST.IntLit 2))
+             , ParseCase  { parseDescription = "ParseCase: i = a && b;"
+                          , parseInput = "i = a && b;"
+                          , expectedStmts = [Assign "i" (AST.LAnd (AST.Identifier "a") (AST.Identifier "b"))]
+                          }
+             , ParseCase  { parseDescription = "ParseCase: i = a | b;"
+                          , parseInput = "i = a | b;"
+                          , expectedStmts = [Assign "i" (AST.BOr (AST.Identifier "a") (AST.Identifier "b"))]
+                          }
+             , ParseCase  { parseDescription = "ParseCase: i = a ^ b;"
+                          , parseInput = "i = a ^ b;"
+                          , expectedStmts = [Assign "i" (AST.BXor (AST.Identifier "a") (AST.Identifier "b"))]
+                          }
+             , ParseCase  { parseDescription = "ParseCase: i = a & b;"
+                          , parseInput = "i = a & b;"
+                          , expectedStmts = [Assign "i" (AST.BAnd (AST.Identifier "a") (AST.Identifier "b"))]
+                          }
+             , ParseCase  { parseDescription = "ParseCase: i = a == b;"
+                          , parseInput = "i = a == b;"
+                          , expectedStmts = [Assign "i" (AST.Eql (AST.Identifier "a") (AST.Identifier "b"))]
+                          }
+             , ParseCase  { parseDescription = "ParseCase: i = a != b;"
+                          , parseInput = "i = a != b;"
+                          , expectedStmts = [Assign "i" (AST.Neq (AST.Identifier "a") (AST.Identifier "b"))]
+                          }
+             , ParseCase  { parseDescription = "ParseCase: i = a < b;"
+                          , parseInput = "i = a < b;"
+                          , expectedStmts = [Assign "i" (AST.Lt (AST.Identifier "a") (AST.Identifier "b"))]
+                          }
+             , ParseCase  { parseDescription = "ParseCase: i = a > b;"
+                          , parseInput = "i = a > b;"
+                          , expectedStmts = [Assign "i" (AST.Gt (AST.Identifier "a") (AST.Identifier "b"))]
+                          }
+             , ParseCase  { parseDescription = "ParseCase: i = a <= b;"
+                          , parseInput = "i = a <= b;"
+                          , expectedStmts = [Assign "i" (AST.Lte (AST.Identifier "a") (AST.Identifier "b"))]
+                          }
+             , ParseCase  { parseDescription = "ParseCase: i = a >= b;"
+                          , parseInput = "i = a >= b;"
+                          , expectedStmts = [Assign "i" (AST.Gte (AST.Identifier "a") (AST.Identifier "b"))]
+                          }
+             , ParseCase  { parseDescription = "ParseCase: i = 1 + 2;"
+                          , parseInput = "i = 1 + 2;"
+                          , expectedStmts = [Assign "i" (AST.Add (AST.IntLit 1) (AST.IntLit 2))]
+                          }
+             , ParseCase  { parseDescription = "ParseCase: i = 1 - 2;"
+                          , parseInput = "i = 1 - 2;"
+                          , expectedStmts = [Assign "i" (AST.Sub (AST.IntLit 1) (AST.IntLit 2))]
+                          }
+             , ParseCase  { parseDescription = "ParseCase: i = 1 + -2;"
+                          , parseInput = "i = 1 + -2;"
+                          , expectedStmts = [Assign "i" (AST.Add (AST.IntLit 1) (AST.UMinus (AST.IntLit 2)))]
                           }        
-             , ParseCase  { parseDescription = "ParseCase: -1 - +2"
-                          , parseInput = "-1 - +2"
-                          , expectedStmt = AST.Sub (AST.UMinus (AST.IntLit 1)) (AST.UPlus (AST.IntLit 2))
+             , ParseCase  { parseDescription = "ParseCase: i = -1 - +2;"
+                          , parseInput = "i = -1 - +2;"
+                          , expectedStmts = [Assign "i" (AST.Sub (AST.UMinus (AST.IntLit 1)) (AST.UPlus (AST.IntLit 2)))]
                           } 
-             , ParseCase  { parseDescription = "ParseCase:  1 *  2"
-                          , parseInput = "1 * 2"
-                          , expectedStmt = AST.Mul (AST.IntLit 1) (AST.IntLit 2)
+             , ParseCase  { parseDescription = "ParseCase: i = 1 * 2;"
+                          , parseInput = "i = 1 * 2;"
+                          , expectedStmts = [Assign "i" (AST.Mul (AST.IntLit 1) (AST.IntLit 2))]
                           }
-             , ParseCase  { parseDescription = "ParseCase:  1 /  2"
-                          , parseInput = "1 / 2"
-                          , expectedStmt = AST.Div (AST.IntLit 1) (AST.IntLit 2)
+             , ParseCase  { parseDescription = "ParseCase: i = 1 / 2;"
+                          , parseInput = "i = 1 / 2;"
+                          , expectedStmts = [Assign "i" (AST.Div (AST.IntLit 1) (AST.IntLit 2))]
                           }
-             , ParseCase  { parseDescription = "ParseCase:  1 * -2"
-                          , parseInput = "1 * -2"
-                          , expectedStmt = AST.Mul (AST.IntLit 1) (AST.UMinus (AST.IntLit 2))
+             , ParseCase  { parseDescription = "ParseCase: i = 1 * -2;"
+                          , parseInput = "i = 1 * -2;"
+                          , expectedStmts = [Assign "i" (AST.Mul (AST.IntLit 1) (AST.UMinus (AST.IntLit 2)))]
                           }        
-             , ParseCase  { parseDescription = "ParseCase: -1 / +2"
-                          , parseInput = "-1 / +2"
-                          , expectedStmt = AST.Div (AST.UMinus (AST.IntLit 1)) (AST.UPlus (AST.IntLit 2))
+             , ParseCase  { parseDescription = "ParseCase: i = -1 / +2;"
+                          , parseInput = "i = -1 / +2;"
+                          , expectedStmts = [Assign "i" (AST.Div (AST.UMinus (AST.IntLit 1)) (AST.UPlus (AST.IntLit 2)))]
                           } 
-             , ParseCase  { parseDescription = "ParseCase:  1 + 2 * 3"
-                          , parseInput = "1 + 2 * 3"
-                          , expectedStmt = AST.Add (AST.IntLit 1) (AST.Mul (AST.IntLit 2) (AST.IntLit 3))
+             , ParseCase  { parseDescription = "ParseCase: i = 1 + 2 * 3;"
+                          , parseInput = "i = 1 + 2 * 3;"
+                          , expectedStmts = [Assign "i" (AST.Add (AST.IntLit 1) (AST.Mul (AST.IntLit 2) (AST.IntLit 3)))]
                           }
-             , ParseCase  { parseDescription = "ParseCase:  1 * 2 + 3"
-                          , parseInput = "1 * 2 + 3"
-                          , expectedStmt = AST.Add (AST.Mul (AST.IntLit 1) (AST.IntLit 2)) (AST.IntLit 3)
+             , ParseCase  { parseDescription = "ParseCase: i = 1 * 2 + 3;"
+                          , parseInput = "i = 1 * 2 + 3;"
+                          , expectedStmts = [Assign "i" (AST.Add (AST.Mul (AST.IntLit 1) (AST.IntLit 2)) (AST.IntLit 3))]
                           }
-             , ParseCase  { parseDescription = "ParseCase:  ((1) -  (2))"
-                          , parseInput = "((1) - (2))"
-                          , expectedStmt = AST.Sub (AST.IntLit 1) (AST.IntLit 2)
+             , ParseCase  { parseDescription = "ParseCase: i = ((1) -  (2));"
+                          , parseInput = "i = ((1) - (2));"
+                          , expectedStmts = [Assign "i" (AST.Sub (AST.IntLit 1) (AST.IntLit 2))]
                           }
-             , ParseCase  { parseDescription = "ParseCase:  1 + 2 + 3 + 4 + 5"
-                          , parseInput = "1 + 2 + 3 + 4 + 5"
-                          , expectedStmt = AST.Add (AST.Add (AST.Add (AST.Add (AST.IntLit 1) (AST.IntLit 2)) (AST.IntLit 3)) (AST.IntLit 4)) (AST.IntLit 5)
+             , ParseCase  { parseDescription = "ParseCase: i = 1 + 2 + 3 + 4 + 5;"
+                          , parseInput = "i = 1 + 2 + 3 + 4 + 5;"
+                          , expectedStmts = [Assign "i" (AST.Add (AST.Add (AST.Add (AST.Add (AST.IntLit 1) (AST.IntLit 2)) (AST.IntLit 3)) (AST.IntLit 4)) (AST.IntLit 5))]
                           }
-             , ParseCase  { parseDescription = "ParseCase:  1 - 2 - 3 - 4 - 5"
-                          , parseInput = "1 - 2 - 3 - 4 - 5"
-                          , expectedStmt = AST.Sub (AST.Sub (AST.Sub (AST.Sub (AST.IntLit 1) (AST.IntLit 2)) (AST.IntLit 3)) (AST.IntLit 4)) (AST.IntLit 5)
+             , ParseCase  { parseDescription = "ParseCase: i = 1 - 2 - 3 - 4 - 5;"
+                          , parseInput = "i = 1 - 2 - 3 - 4 - 5;"
+                          , expectedStmts = [Assign "i" (AST.Sub (AST.Sub (AST.Sub (AST.Sub (AST.IntLit 1) (AST.IntLit 2)) (AST.IntLit 3)) (AST.IntLit 4)) (AST.IntLit 5))]
                           }
-             , ParseCase  { parseDescription = "ParseCase:  1 * 2 * 3 * 4 * 5"
-                          , parseInput = "1 * 2 * 3 * 4 * 5"
-                          , expectedStmt = AST.Mul (AST.Mul (AST.Mul (AST.Mul (AST.IntLit 1) (AST.IntLit 2)) (AST.IntLit 3)) (AST.IntLit 4)) (AST.IntLit 5)
+             , ParseCase  { parseDescription = "ParseCase: i = 1 * 2 * 3 * 4 * 5;"
+                          , parseInput = "i = 1 * 2 * 3 * 4 * 5;"
+                          , expectedStmts = [Assign "i" (AST.Mul (AST.Mul (AST.Mul (AST.Mul (AST.IntLit 1) (AST.IntLit 2)) (AST.IntLit 3)) (AST.IntLit 4)) (AST.IntLit 5))]
                           }
-             , ParseCase  { parseDescription = "ParseCase:  1 / 2 / 3 / 4 / 5"
-                          , parseInput = "1 / 2 / 3 / 4 / 5"
-                          , expectedStmt = AST.Div (AST.Div (AST.Div (AST.Div (AST.IntLit 1) (AST.IntLit 2)) (AST.IntLit 3)) (AST.IntLit 4)) (AST.IntLit 5)
+             , ParseCase  { parseDescription = "ParseCase: i = 1 / 2 / 3 / 4 / 5;"
+                          , parseInput = "i = 1 / 2 / 3 / 4 / 5;"
+                          , expectedStmts = [Assign "i" (AST.Div (AST.Div (AST.Div (AST.Div (AST.IntLit 1) (AST.IntLit 2)) (AST.IntLit 3)) (AST.IntLit 4)) (AST.IntLit 5))]
                           }
-             , ParseCase  { parseDescription = "ParseCase:  1 + 2 - 3 + 4 - 5"
-                          , parseInput = "1 + 2 - 3 + 4 - 5"
-                          , expectedStmt = AST.Sub (AST.Add (AST.Sub (AST.Add (AST.IntLit 1) (AST.IntLit 2)) (AST.IntLit 3)) (AST.IntLit 4)) (AST.IntLit 5)
+             , ParseCase  { parseDescription = "ParseCase: i = 1 + 2 - 3 + 4 - 5;"
+                          , parseInput = "i = 1 + 2 - 3 + 4 - 5;"
+                          , expectedStmts = [Assign "i" (AST.Sub (AST.Add (AST.Sub (AST.Add (AST.IntLit 1) (AST.IntLit 2)) (AST.IntLit 3)) (AST.IntLit 4)) (AST.IntLit 5))]
                           }
-             , ParseCase  { parseDescription = "ParseCase:  1 * 2 / 3 * 4 / 5"
-                          , parseInput = "1 * 2 / 3 * 4 / 5"
-                          , expectedStmt = AST.Div (AST.Mul (AST.Div (AST.Mul (AST.IntLit 1) (AST.IntLit 2)) (AST.IntLit 3)) (AST.IntLit 4)) (AST.IntLit 5)
+             , ParseCase  { parseDescription = "ParseCase: i = 1 * 2 / 3 * 4 / 5;"
+                          , parseInput = "i = 1 * 2 / 3 * 4 / 5;"
+                          , expectedStmts = [Assign "i" (AST.Div (AST.Mul (AST.Div (AST.Mul (AST.IntLit 1) (AST.IntLit 2)) (AST.IntLit 3)) (AST.IntLit 4)) (AST.IntLit 5))]
                           }
-             , ParseCase  { parseDescription = "ParseCase:  1 * 2 * 3 + 4 * 5"
-                          , parseInput = "1 * 2 * 3 + 4 * 5"
-                          , expectedStmt = AST.Add (AST.Mul (AST.Mul (AST.IntLit 1) (AST.IntLit 2)) (AST.IntLit 3)) (AST.Mul (AST.IntLit 4) (AST.IntLit 5))
+             , ParseCase  { parseDescription = "ParseCase: i = 1 * 2 * 3 + 4 * 5;"
+                          , parseInput = "i = 1 * 2 * 3 + 4 * 5;"
+                          , expectedStmts = [Assign "i" (AST.Add (AST.Mul (AST.Mul (AST.IntLit 1) (AST.IntLit 2)) (AST.IntLit 3)) (AST.Mul (AST.IntLit 4) (AST.IntLit 5)))]
                           }
-             , ParseCase  { parseDescription = "ParseCase:  1 * 2 - 3 * 4 * 5"
-                          , parseInput = "1 * 2 - 3 * 4 * 5"
-                          , expectedStmt = AST.Sub (AST.Mul (AST.IntLit 1) (AST.IntLit 2)) (AST.Mul (AST.Mul (AST.IntLit 3) (AST.IntLit 4)) (AST.IntLit 5))
+             , ParseCase  { parseDescription = "ParseCase: i = 1 * 2 - 3 * 4 * 5;"
+                          , parseInput = "i = 1 * 2 - 3 * 4 * 5;"
+                          , expectedStmts = [Assign "i" (AST.Sub (AST.Mul (AST.IntLit 1) (AST.IntLit 2)) (AST.Mul (AST.Mul (AST.IntLit 3) (AST.IntLit 4)) (AST.IntLit 5)))]
                           }
-             , ParseCase  { parseDescription = "ParseCase:  1 / 2 / 3 + 4 / 5"
-                          , parseInput = "1 / 2 / 3 + 4 / 5"
-                          , expectedStmt = AST.Add (AST.Div (AST.Div (AST.IntLit 1) (AST.IntLit 2)) (AST.IntLit 3)) (AST.Div (AST.IntLit 4) (AST.IntLit 5))
+             , ParseCase  { parseDescription = "ParseCase: i = 1 / 2 / 3 + 4 / 5;"
+                          , parseInput = "i = 1 / 2 / 3 + 4 / 5;"
+                          , expectedStmts = [Assign "i" (AST.Add (AST.Div (AST.Div (AST.IntLit 1) (AST.IntLit 2)) (AST.IntLit 3)) (AST.Div (AST.IntLit 4) (AST.IntLit 5)))]
                           }
-             , ParseCase  { parseDescription = "ParseCase:  1 / 2 - 3 / 4 / 5"
-                          , parseInput = "1 / 2 - 3 / 4 / 5"
-                          , expectedStmt = AST.Sub (AST.Div (AST.IntLit 1) (AST.IntLit 2)) (AST.Div (AST.Div (AST.IntLit 3) (AST.IntLit 4)) (AST.IntLit 5))
+             , ParseCase  { parseDescription = "ParseCase: i = 1 / 2 - 3 / 4 / 5;"
+                          , parseInput = "i = 1 / 2 - 3 / 4 / 5;"
+                          , expectedStmts = [Assign "i" (AST.Sub (AST.Div (AST.IntLit 1) (AST.IntLit 2)) (AST.Div (AST.Div (AST.IntLit 3) (AST.IntLit 4)) (AST.IntLit 5)))]
                           }
-             , ParseCase  { parseDescription = "ParseCase:  1 + 2 * 3 - 4 / 5 + 6"
-                          , parseInput = "1 + 2 * 3 - 4 / 5 + 6"
-                          , expectedStmt = AST.Add (AST.Sub (AST.Add (AST.IntLit 1) (AST.Mul (AST.IntLit 2) (AST.IntLit 3))) (AST.Div (AST.IntLit 4) (AST.IntLit 5))) (AST.IntLit 6)
+             , ParseCase  { parseDescription = "ParseCase: i = 1 + 2 * 3 - 4 / 5 + 6;"
+                          , parseInput = "i = 1 + 2 * 3 - 4 / 5 + 6;"
+                          , expectedStmts = [Assign "i" (AST.Add (AST.Sub (AST.Add (AST.IntLit 1) (AST.Mul (AST.IntLit 2) (AST.IntLit 3))) (AST.Div (AST.IntLit 4) (AST.IntLit 5))) (AST.IntLit 6))]
                           }
-             , ParseCase  { parseDescription = "ParseCase: -1 + +2 * -3 - +4 / -5 + +6"
-                          , parseInput = "-1 + +2 * -3 - +4 / -5 + +6"
-                          , expectedStmt = AST.Add (AST.Sub (AST.Add (AST.UMinus (AST.IntLit 1)) (AST.Mul (AST.UPlus (AST.IntLit 2)) (AST.UMinus (AST.IntLit 3)))) (AST.Div (AST.UPlus (AST.IntLit 4)) (AST.UMinus (AST.IntLit 5)))) (AST.UPlus (AST.IntLit 6))
+             , ParseCase  { parseDescription = "ParseCase: i = -1 + +2 * -3 - +4 / -5 + +6;"
+                          , parseInput = "i = -1 + +2 * -3 - +4 / -5 + +6;"
+                          , expectedStmts = [Assign "i" (AST.Add (AST.Sub (AST.Add (AST.UMinus (AST.IntLit 1)) (AST.Mul (AST.UPlus (AST.IntLit 2)) (AST.UMinus (AST.IntLit 3)))) (AST.Div (AST.UPlus (AST.IntLit 4)) (AST.UMinus (AST.IntLit 5)))) (AST.UPlus (AST.IntLit 6)))]
                           }
+             , ParseCase  { parseDescription = "ParseCase: {{ {i = 2;} {i = 5;} }}"
+                          , parseInput = "{{ {i = 2;} {i = 5;} }}"
+                          , expectedStmts = [AST.Block [AST.Block [AST.Block [Assign "i" (AST.IntLit 2)], AST.Block [Assign "i" (AST.IntLit 5)]]]]
+                          }
+             , ParseCase  { parseDescription = "ParseCase: while (i < 5) { i = i + 5; }"
+                          , parseInput = "while (i < 5) { i = i + 5; }"
+                          , expectedStmts = [AST.While (AST.Lt (AST.Identifier "i") (AST.IntLit 5)) (AST.Block [AST.Assign "i" (AST.Add (AST.Identifier "i") (AST.IntLit 5))])]
+                          }
+             , ParseCase  { parseDescription = "ParseCase: if (a > b) { m = 1 + 2; }"
+                          , parseInput = "if (a > b) { m = 1 + 2; }"
+                          , expectedStmts = [AST.If (AST.Gt (AST.Identifier "a") (AST.Identifier "b")) (AST.Block [AST.Assign "m" (AST.Add (AST.IntLit 1) (AST.IntLit 2))]) AST.Empty]
+                          }
+             , ParseCase  { parseDescription = "ParseCase: if (a < b) { m = 1 + 2; } else { n = 2 + 3; }"
+                          , parseInput = "if (a > b) { m = 1 + 2; } else { n = 2 + 3; }" 
+                          , expectedStmts = [AST.If (AST.Gt (AST.Identifier "a") (AST.Identifier "b")) (AST.Block [AST.Assign "m" (AST.Add (AST.IntLit 1) (AST.IntLit 2))]) (AST.Block [AST.Assign "n" (AST.Add (AST.IntLit 2) (AST.IntLit 3))])]
+                          }
+             , ParseCase  { parseDescription = "ParseCase: print (1 + 2 + 3);"
+                          , parseInput = "print (1 + 2 + 3);" 
+                          , expectedStmts = [AST.Print (AST.Add (AST.Add (AST.IntLit 1) (AST.IntLit 2)) (AST.IntLit 3))]
+                          }
+             , ParseCase  { parseDescription = "ParseCase: int i, j, k;"
+                          , parseInput = "int i, j, k;"
+                          , expectedStmts = [VarDecl AST.Int' [AST.Identifier "i", AST.Identifier "j", AST.Identifier "k"]]
+                          }
+             , ParseCase  { parseDescription = "ParseCase: boolean i, j, k;"
+                          , parseInput = "boolean i, j, k;"
+                          , expectedStmts = [VarDecl AST.Boolean [AST.Identifier "i", AST.Identifier "j", AST.Identifier "k"]]
+                          }
+                    
              ]
